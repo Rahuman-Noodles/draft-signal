@@ -1,0 +1,7 @@
+model/raw/
+*.sqlite
+*.duckdb
+*.zip
+__pycache__/
+*.pyc
+.DS_Store

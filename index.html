@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Draft Signal — NBA Career Prediction Product Case</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Product case study &middot; ML portfolio project</p>
+    <h1>Draft Signal</h1>
+    <p class="subtitle">Will this draft pick actually become an NBA rotation player? A deep-learning + product case
+      built on 24 years of real combine, draft, and play-by-play data.</p>
+    <div class="hero-stats">
+      <div><span class="num">1,591</span><span class="lbl">combine invitees analyzed</span></div>
+      <div><span class="num">13.6M</span><span class="lbl">play-by-play rows mined for career outcomes</span></div>
+      <div><span class="num">0.84</span><span class="lbl">best model AUC vs 0.69 for draft slot alone</span></div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="block">
+    <h2>The problem</h2>
+    <p>NBA front offices invest heavily in the annual scouting combine — physical testing, agility drills, shooting
+      workouts — for every draft-eligible prospect. But most public and internal draft evaluation still leans
+      overwhelmingly on <strong>draft position</strong> as the implicit forecast of a player's career, even though
+      draft slot is itself a noisy human judgment made months before the player has taken an NBA rep.
+      This project asks: <em>how much signal is actually hiding in the combine numbers themselves</em>, and is it
+      strong enough to justify a decision-support product for scouting staff?</p>
+  </section>
+
+  <section class="block">
+    <h2>What I built</h2>
+    <p>Using the <a href="https://www.kaggle.com/datasets/wyattowalsh/basketball" target="_blank" rel="noopener">NBA
+      Database (Kaggle, wyattowalsh)</a> — a 2.2GB SQLite database of every NBA game, draft combine test, and
+      play-by-play event since the league's founding — I engineered a full outcome-labeling pipeline (the dataset
+      has no ready-made "career games played" field, so I reconstructed it from 13.6M play-by-play rows by joining
+      every event a player appears in as shooter, passer, rebounder, or substitute across their whole career), then
+      trained four models to predict whether a drafted player becomes at least a <strong>rotation-caliber player
+      (100+ career games)</strong>, using only information available at draft time: combine measurements
+      (height, wingspan, vertical leap, sprint/agility times, body fat, bench press) and draft position.</p>
+  </section>
+
+  <section class="block">
+    <h2>Model results</h2>
+    <p>The core product question — "does combine testing add value beyond the pick number teams already know?" —
+      has a clear answer: yes. A gradient-boosted model using combine data lifts prediction accuracy from
+      <strong>0.686 AUC</strong> (draft position alone) to <strong>0.842 AUC</strong>. Interestingly, the deep
+      learning MLP (0.795) beats the linear baseline but loses to gradient boosting — a realistic and important
+      finding, since this dataset (~1,130 training rows) is simply too small for a neural net's extra capacity to
+      pay off over a well-tuned tree ensemble. That tradeoff itself is a real product decision, not just a modeling
+      footnote.</p>
+    <div class="chart-grid">
+      <figure><img src="assets/auc_comparison.png" alt="AUC comparison across four models" /></figure>
+      <figure><img src="assets/roc_comparison.png" alt="ROC curve comparison across four models" /></figure>
+    </div>
+    <figure class="chart-wide"><img src="assets/feature_importance.png" alt="Feature importance chart" /></figure>
+    <p class="caption">Beyond draft slot, standing reach, vertical leap and sprint speed are the strongest positive
+      signals; higher body fat and slower lane agility are the strongest negative signals — consistent with what
+      scouts already believe qualitatively, now quantified.</p>
+  </section>
+
+  <section class="block">
+    <h2>Player explorer</h2>
+    <p>Explore real predictions: known outcomes for players drafted 2000–2016 (enough time to know how their career
+      actually played out), current unproven prospects (2019–2023), and the two most interesting failure modes for
+      any evaluation product — hidden gems the model would have caught, and hyped picks it would have flagged as risky.</p>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="known">Known outcomes</button>
+      <button class="tab-btn" data-tab="prospects">Current prospects</button>
+      <button class="tab-btn" data-tab="diamonds">Diamonds in the rough</button>
+      <button class="tab-btn" data-tab="busts">Overrated on paper</button>
+    </div>
+
+    <input id="search" type="text" placeholder="Search a player name…" />
+
+    <table id="player-table">
+      <thead>
+        <tr>
+          <th data-key="player_name">Player</th>
+          <th data-key="season">Combine yr</th>
+          <th data-key="position">Pos</th>
+          <th data-key="overall_pick">Pick</th>
+          <th data-key="predicted_prob">Model prob. rotation+</th>
+          <th data-key="games_played">Actual career games</th>
+        </tr>
+      </thead>
+      <tbody id="player-tbody"></tbody>
+    </table>
+  </section>
+
+  <section class="block prd">
+    <h2>PRD-lite: Draft Signal</h2>
+
+    <h3>Problem</h3>
+    <p>Scouting departments score dozens of combine metrics per prospect but have no systematic way to weigh them
+      against historical outcomes — evaluation stays qualitative and inconsistent across scouts, and combine testing
+      spend is hard to justify without a measurable return.</p>
+
+    <h3>User segment</h3>
+    <p>Primary: NBA front-office/scouting analytics staff preparing draft boards. Secondary: player-development
+      staff who use career-trajectory risk to plan development investment for recently drafted players.</p>
+
+    <h3>Solution options considered</h3>
+    <ol>
+      <li><strong>Rule-based scorecard</strong> — simple weighted thresholds on 2-3 combine metrics. Fast to ship,
+        fully transparent, but leaves most of the predictive signal (0.69 → 0.84 AUC gap) on the table.</li>
+      <li><strong>Interpretable baseline (logistic regression)</strong> — every coefficient is explainable to a
+        scout in one sentence; 0.735 AUC, a real but modest lift over the status quo.</li>
+      <li><strong>Gradient-boosted ensemble</strong> — best accuracy (0.842 AUC), captures non-linear interactions
+        between measurements (e.g., height only matters combined with a certain wingspan), at some cost to
+        interpretability.</li>
+      <li><strong>Deep learning trajectory model</strong> — best long-term potential if extended with season-by-season
+        performance sequences, but underperforms gradient boosting today because the labeled dataset is small; the
+        right bet only once more seasons of tracking data are folded in.</li>
+    </ol>
+
+    <h3>MVP cut</h3>
+    <p>Ship the gradient-boosted model behind a simple "combine grade" score (0-100) presented alongside the
+      existing scouting report, with the top 5 driving factors surfaced in plain language for each prospect. Hold
+      the deep learning model as a v2 bet gated on collecting more longitudinal tracking data. Explicitly flag
+      low-confidence predictions for prospects who skip parts of the combine (a real, growing failure mode: several
+      of the most hyped recent prospects — including consensus #1 picks — opt out of athletic testing entirely,
+      which forces the model to fall back toward pick order alone for exactly the players evaluators care about most).</p>
+
+    <h3>Metric tree</h3>
+    <ul>
+      <li><strong>North star:</strong> draft-pick surplus value (career win-shares delivered relative to draft slot expectation)</li>
+      <li><strong>Model health:</strong> AUC and Brier score on each new draft class, refreshed annually as outcomes mature</li>
+      <li><strong>Adoption:</strong> % of scouting reports where staff cite the combine grade in their final recommendation</li>
+      <li><strong>Trust/guardrail:</strong> rate of high-confidence predictions overturned by scouts, tracked to catch model drift or blind spots</li>
+    </ul>
+  </section>
+
+  <section class="block limits">
+    <h3>Known limitations</h3>
+    <ul>
+      <li>Career outcome labels were reconstructed from play-by-play appearance data (the dataset has no direct
+        "career games" field) — a reasonable proxy but not an official box-score count.</li>
+      <li>Training set restricted to 2000–2016 combine classes so careers have had time to mature; 2017+ prospects
+        are shown as live, still-developing predictions, not validated outcomes.</li>
+      <li>Elite prospects increasingly skip combine testing, which silently degrades the model back toward
+        pick-order for exactly the players a team most wants a second opinion on — the biggest product risk to solve next.</li>
+    </ul>
+  </section>
+
+</main>
+
+<footer>
+  <p>Data: <a href="https://www.kaggle.com/datasets/wyattowalsh/basketball" target="_blank" rel="noopener">NBA Database, wyattowalsh (Kaggle)</a>,
+    sourced from stats.nba.com. Built as a product-management interview portfolio project.</p>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
