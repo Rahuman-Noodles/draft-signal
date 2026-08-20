@@ -19,24 +19,31 @@ def clean(df, prob_col):
     df["overall_pick"] = pd.to_numeric(df["overall_pick"], errors="coerce").fillna(-1).astype(int)
     df["games_played"] = pd.to_numeric(df["games_played"], errors="coerce").fillna(0).astype(int)
     df[prob_col] = (df[prob_col] * 100).round(1)
+    df["combine_grade"] = pd.to_numeric(df["combine_grade"], errors="coerce").round(0).astype(int)
     df["position"] = df["position"].fillna("\u2014")
+    df["factors"] = df["factors"].apply(json.loads)
     return df
 
 
 t = clean(t, "predicted_prob_mlp")
 p = clean(p, "predicted_rotation_prob_mlp")
 
+KNOWN_COLS = ["player_name", "season", "position", "overall_pick", "games_played",
+              "rotation_or_better", "predicted_prob_mlp", "combine_grade", "factors"]
+PROSPECT_COLS = ["player_name", "season", "position", "overall_pick", "games_played",
+                 "predicted_rotation_prob_mlp", "combine_grade", "factors"]
+
 known = (
-    t[["player_name", "season", "position", "overall_pick", "games_played", "rotation_or_better", "predicted_prob_mlp"]]
+    t[KNOWN_COLS]
     .rename(columns={"predicted_prob_mlp": "predicted_prob", "rotation_or_better": "actual_hit"})
     .sort_values("season", ascending=False)
     .to_dict(orient="records")
 )
 
 prospects = (
-    p[["player_name", "season", "position", "overall_pick", "games_played", "predicted_rotation_prob_mlp"]]
+    p[PROSPECT_COLS]
     .rename(columns={"predicted_rotation_prob_mlp": "predicted_prob"})
-    .sort_values("predicted_prob", ascending=False)
+    .sort_values("combine_grade", ascending=False)
     .to_dict(orient="records")
 )
 

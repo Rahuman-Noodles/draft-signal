@@ -94,6 +94,88 @@ results["logistic_regression"] = {
     "brier": brier_score_loss(y_te, proba_lr),
 }
 coef = pd.Series(lr.coef_[0], index=FEATURES + DRAFT_FEATURE).sort_values(key=abs, ascending=False)
+coef_order = FEATURES + DRAFT_FEATURE  # column order matching Xc_*_s arrays
+coef_vec = coef.reindex(coef_order).values
+
+FEATURE_LABELS = {
+    "height_wo_shoes": "Height (no shoes)",
+    "weight": "Weight",
+    "wingspan": "Wingspan",
+    "standing_reach": "Standing reach",
+    "body_fat_pct": "Body fat %",
+    "standing_vertical_leap": "Standing vertical leap",
+    "max_vertical_leap": "Max vertical leap",
+    "lane_agility_time": "Lane agility time",
+    "three_quarter_sprint": "Three-quarter sprint",
+    "bench_press": "Bench press reps",
+    "overall_pick": "Draft position",
+}
+
+
+# feature-specific phrasing so the raw z-score direction reads naturally
+# (e.g. a fast sprint time is a LOW raw value, so "below average" would read
+# as a weakness when it's actually a strength -- phrase per feature instead).
+GENERIC_PHRASES = {
+    2: "far above average", 1: "above average", 0: "about average",
+    -1: "below average", -2: "far below average",
+}
+SPRINT_PHRASES = {
+    2: "much slower than typical", 1: "slower than typical", 0: "typical speed",
+    -1: "faster than typical", -2: "much faster than typical",
+}
+LEANNESS_PHRASES = {
+    2: "higher body fat than typical", 1: "slightly higher body fat", 0: "typical body fat",
+    -1: "leaner than typical", -2: "much leaner than typical",
+}
+PICK_PHRASES = {
+    2: "very late pick", 1: "later pick", 0: "mid-round pick",
+    -1: "earlier pick", -2: "very early pick",
+}
+FEATURE_PHRASES = {
+    "lane_agility_time": SPRINT_PHRASES,
+    "three_quarter_sprint": SPRINT_PHRASES,
+    "body_fat_pct": LEANNESS_PHRASES,
+    "overall_pick": PICK_PHRASES,
+}
+
+
+def _bucket(z):
+    if z >= 1.5:
+        return 2
+    if z >= 0.5:
+        return 1
+    if z <= -1.5:
+        return -2
+    if z <= -0.5:
+        return -1
+    return 0
+
+
+def magnitude_label(z, feature=None):
+    phrases = FEATURE_PHRASES.get(feature, GENERIC_PHRASES)
+    return phrases[_bucket(z)]
+
+
+def explain_rows(Z, top_n=5):
+    """Z: standardized feature matrix (n_rows x n_cols), columns aligned to coef_order.
+    Returns a list (one per row) of the top_n factors driving that row's logistic-regression
+    score, used as a plain-language 'why' explanation alongside the gradient-boosting grade.
+    """
+    contrib = Z * coef_vec  # elementwise, broadcasts coef_vec across rows
+    out = []
+    for i in range(Z.shape[0]):
+        row_contrib = contrib[i]
+        order = np.argsort(-np.abs(row_contrib))[:top_n]
+        factors = []
+        for j in order:
+            feat = coef_order[j]
+            factors.append({
+                "feature": FEATURE_LABELS.get(feat, feat),
+                "detail": magnitude_label(Z[i, j], feat),
+                "effect": "positive" if row_contrib[j] > 0 else "negative",
+            })
+        out.append(factors)
+    return out
 
 # --- Option C: gradient boosted trees (non-linear baseline) ---
 gbc = GradientBoostingClassifier(random_state=42, n_estimators=200, max_depth=2, learning_rate=0.05).fit(Xc_tr_s, y_tr)
@@ -170,9 +252,12 @@ Xp_demo_s = scaler_c.transform(Xp_demo_i)
 with torch.no_grad():
     prospects_proba_mlp = torch.sigmoid(model(torch.tensor(Xp_demo_s, dtype=torch.float32))).numpy()
 prospects_proba_lr = lr.predict_proba(Xp_demo_s)[:, 1]
+prospects_proba_gbc = gbc.predict_proba(Xp_demo_s)[:, 1]
 prospects_out = prospects[["player_name", "season", "position", "overall_pick", "games_played"]].copy()
 prospects_out["predicted_rotation_prob_mlp"] = prospects_proba_mlp
 prospects_out["predicted_rotation_prob_lr"] = prospects_proba_lr
+prospects_out["combine_grade"] = np.round(prospects_proba_gbc * 100, 1)
+prospects_out["factors"] = [json.dumps(f) for f in explain_rows(Xp_demo_s)]
 prospects_out.to_csv(os.path.join(OUT_DIR, "prospect_predictions.csv"), index=False)
 
 # --- Also score the held-out test set (known outcomes) for a "model vs reality" table ---
@@ -180,6 +265,8 @@ test_out = train_universe.loc[idx_te, ["player_name", "season", "position", "ove
 test_out["predicted_prob_mlp"] = proba_mlp
 test_out["predicted_prob_lr"] = proba_lr
 test_out["predicted_prob_pickonly"] = proba_pick
+test_out["combine_grade"] = np.round(proba_gbc * 100, 1)
+test_out["factors"] = [json.dumps(f) for f in explain_rows(Xc_te_s)]
 test_out.to_csv(os.path.join(OUT_DIR, "test_predictions.csv"), index=False)
 
 print("\nSaved model_results.json, prospect_predictions.csv, test_predictions.csv")

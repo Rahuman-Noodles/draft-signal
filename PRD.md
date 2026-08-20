@@ -78,6 +78,9 @@ report, with the top 5 contributing factors surfaced in plain language per prosp
 approach as a v2 bet, gated on collecting more longitudinal tracking data (multi-season measurements, not just a
 single pre-draft snapshot).
 
+**Shipped:** this is implemented and clickable in the live demo — select any player row in the Player Explorer to
+open its Combine Grade Report Card (grade + top-5 factors).
+
 **Explicitly flag low-confidence predictions** for prospects who skip parts of the combine — a real and growing
 failure mode, since several of the most hyped recent prospects (including consensus top picks) now opt out of
 athletic testing entirely, which forces the model back toward pick order alone for exactly the players evaluators

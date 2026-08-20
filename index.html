@@ -69,7 +69,9 @@
     <h2>Player explorer</h2>
     <p>Explore real predictions: known outcomes for players drafted 2000–2016 (enough time to know how their career
       actually played out), current unproven prospects (2019–2023), and the two most interesting failure modes for
-      any evaluation product — hidden gems the model would have caught, and hyped picks it would have flagged as risky.</p>
+      any evaluation product — hidden gems the model would have caught, and hyped picks it would have flagged as risky.
+      <strong>Click any row to open its Combine Grade Report Card</strong> — the MVP feature from the PRD cut below:
+      a 0-100 grade from the gradient-boosted model plus the top 5 factors driving it, in plain language.</p>
 
     <div class="tabs">
       <button class="tab-btn active" data-tab="known">Known outcomes</button>
@@ -88,11 +90,13 @@
           <th data-key="position">Pos</th>
           <th data-key="overall_pick">Pick</th>
           <th data-key="predicted_prob">Model prob. rotation+</th>
+          <th data-key="combine_grade">Combine grade</th>
           <th data-key="games_played">Actual career games</th>
         </tr>
       </thead>
       <tbody id="player-tbody"></tbody>
     </table>
+    <p class="caption">Click any row to open its Combine Grade Report Card.</p>
   </section>
 
   <section class="block prd">
@@ -156,6 +160,27 @@
   <p>Data: <a href="https://www.kaggle.com/datasets/wyattowalsh/basketball" target="_blank" rel="noopener">NBA Database, wyattowalsh (Kaggle)</a>,
     sourced from stats.nba.com. Built as a product-management interview portfolio project.</p>
 </footer>
+
+<div id="report-card-overlay" class="overlay hidden">
+  <div class="report-card">
+    <button id="report-card-close" class="close-btn" aria-label="Close">&times;</button>
+    <p class="rc-eyebrow">Combine Grade Report Card</p>
+    <h3 id="rc-name">—</h3>
+    <p id="rc-meta" class="rc-meta">—</p>
+    <div class="rc-grade-row">
+      <div id="rc-grade-circle" class="rc-grade-circle">
+        <span id="rc-grade-num">—</span>
+      </div>
+      <div class="rc-grade-desc">
+        <p class="rc-grade-label">Combine grade (0–100)</p>
+        <p class="rc-grade-sub">From the gradient-boosted model — the recommended MVP score per the PRD.</p>
+        <p class="rc-grade-sub" id="rc-model-prob"></p>
+      </div>
+    </div>
+    <p class="rc-factors-title">Top factors behind this grade</p>
+    <ul id="rc-factors" class="rc-factors"></ul>
+  </div>
+</div>
 
 <script src="app.js"></script>
 </body>

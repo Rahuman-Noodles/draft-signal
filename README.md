@@ -47,7 +47,13 @@ A single static page (no backend, no build step) with three parts:
    - *Current prospects*: recent draftees (2019–2023) scored live by the model, career still unfolding
    - *Diamonds in the rough*: players the model scored low who became rotation players anyway
    - *Overrated on paper*: players the model scored high who never stuck in the league
-3. **PRD-lite** — the full product write-up, embedded directly in the page.
+3. **Combine Grade Report Card (the working MVP)** — click any player row to open a report card with a 0–100
+   combine grade (the gradient-boosted model's win probability, rescaled) and the top 5 factors driving that score
+   in plain language (e.g. "Standing reach: above average", "Lane agility time: faster than typical"), each tagged
+   as a positive or negative contributor. This is the PRD's MVP recommendation, actually shipped and clickable
+   rather than just described — see `model/model_pipeline.py`'s `explain_rows()` for how the explanations are
+   computed (standardized logistic-regression coefficients × each player's own standardized feature values).
+4. **PRD-lite** — the full product write-up, embedded directly in the page.
 
 ### Running the site locally
 
