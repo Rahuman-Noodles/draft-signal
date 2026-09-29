@@ -61,9 +61,13 @@ No build tools needed — it's plain HTML/CSS/JS.
 
 ```bash
 cd /path/to/draft-signal
-python3 -m http.server 8000
+python3 -m http.server 8000   # or: make serve
 # then open http://localhost:8000
 ```
+
+Shortcut commands live in the `Makefile`: `make check` validates the checked-in
+data and generated site data, `make site` rebuilds `assets/site_data.json`,
+and `make reproduce` retrains all four models from scratch.
 
 ## The model
 
