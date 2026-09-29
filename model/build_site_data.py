@@ -13,6 +13,22 @@ os.makedirs(ASSETS_DIR, exist_ok=True)
 t = pd.read_csv(os.path.join(HERE, "test_predictions.csv"))
 p = pd.read_csv(os.path.join(HERE, "prospect_predictions.csv"))
 
+# --- Measurement completeness: how many of the 10 combine inputs were actually
+# measured vs median-imputed for each player. Powers the low-confidence badge
+# in the report card (the PRD's stated top follow-on bet).
+MEASURE_COLS = [
+    "height_wo_shoes", "weight", "wingspan", "standing_reach", "body_fat_pct",
+    "standing_vertical_leap", "max_vertical_leap", "lane_agility_time",
+    "three_quarter_sprint", "bench_press",
+]
+combine = pd.read_csv(os.path.join(HERE, "data", "combine_clean.csv"))
+combine["_missing_count"] = (
+    combine[MEASURE_COLS].apply(pd.to_numeric, errors="coerce").isna().sum(axis=1)
+)
+missing_lookup = (
+    combine.groupby(["player_name", "season"])["_missing_count"].min().to_dict()
+)
+
 
 def clean(df, prob_col):
     df = df.copy()
@@ -55,7 +71,18 @@ diamonds = sorted(diamonds, key=lambda r: r["predicted_prob"])[:8]
 busts = [r for r in known if r["predicted_prob"] > 75 and r["actual_hit"] == 0]
 busts = sorted(busts, key=lambda r: -r["predicted_prob"])[:8]
 
-out = {"known": known, "prospects": prospects, "diamonds": diamonds, "busts": busts}
+def attach_completeness(rows):
+    for r in rows:
+        r["missing_count"] = int(missing_lookup.get((r["player_name"], r["season"]), 0))
+    return rows
+
+
+out = {
+    "known": attach_completeness(known),
+    "prospects": attach_completeness(prospects),
+    "diamonds": diamonds,
+    "busts": busts,
+}
 
 with open(os.path.join(ASSETS_DIR, "site_data.json"), "w") as f:
     json.dump(out, f, allow_nan=False)

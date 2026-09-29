@@ -390,6 +390,21 @@ footer {
   margin: 0 0 4px;
 }
 
+.rc-confidence {
+  display: none;
+  font-family: "Helvetica Neue", Arial, sans-serif;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #7a4a00;
+  background: #fff6e0;
+  border: 1px solid #f0d48a;
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin: 10px 0 0;
+}
+
+.rc-confidence.show { display: block; }
+
 .rc-factors-title {
   font-family: "Helvetica Neue", Arial, sans-serif;
   font-size: 13px;

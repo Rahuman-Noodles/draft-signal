@@ -127,6 +127,18 @@ function openReportCard(r) {
   document.getElementById("rc-model-prob").textContent =
     `Model-estimated probability of becoming a rotation player: ${r.predicted_prob}%`;
 
+  const confidence = document.getElementById("rc-confidence");
+  const missing = r.missing_count || 0;
+  if (missing > 0) {
+    confidence.textContent =
+      `Low-confidence grade — ${missing} of 10 combine measurements missing ` +
+      `(filled in at the median), so this leans mostly on draft position.`;
+    confidence.classList.add("show");
+  } else {
+    confidence.textContent = "";
+    confidence.classList.remove("show");
+  }
+
   const list = document.getElementById("rc-factors");
   list.innerHTML = (r.factors || [])
     .map((f) => {

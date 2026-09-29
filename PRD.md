@@ -79,7 +79,9 @@ approach as a v2 bet, gated on collecting more longitudinal tracking data (multi
 single pre-draft snapshot).
 
 **Shipped:** this is implemented and clickable in the live demo — select any player row in the Player Explorer to
-open its Combine Grade Report Card (grade + top-5 factors).
+open its Combine Grade Report Card (grade + top-5 factors). The low-confidence flag is also shipped: players with
+missing combine measurements get a "low-confidence grade" banner on their report card naming how many of the 10
+inputs were median-imputed.
 
 **Explicitly flag low-confidence predictions** for prospects who skip parts of the combine — a real and growing
 failure mode, since several of the most hyped recent prospects (including consensus top picks) now opt out of
