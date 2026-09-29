@@ -12,10 +12,19 @@ const COLS = {
 };
 
 fetch("assets/site_data.json")
-  .then((r) => r.json())
+  .then((r) => {
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return r.json();
+  })
   .then((data) => {
     DATA = data;
     render();
+  })
+  .catch(() => {
+    document.getElementById("player-tbody").innerHTML =
+      `<tr><td colspan="7">Couldn&rsquo;t load player data. ` +
+      `Serve this page over HTTP (e.g. <code>python3 -m http.server</code>) ` +
+      `instead of opening the file directly — browsers block local data fetches.</td></tr>`;
   });
 
 document.querySelectorAll(".tab-btn").forEach((btn) => {
@@ -70,8 +79,11 @@ function render() {
     });
   }
 
+  const total = rows.length;
   rows = rows.slice(0, 120);
   currentRows = rows;
+  document.getElementById("result-count").textContent =
+    `Showing ${rows.length} of ${total} players` + (total > 120 ? " (top 120)" : "");
 
   tbody.innerHTML = rows
     .map((r, i) => {
